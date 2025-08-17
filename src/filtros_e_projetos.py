@@ -1,0 +1,275 @@
+from pathlib import Path
+import json
+from openpyxl import load_workbook
+
+from config import MAPEAMENTO_COLUNAS
+from utils import (
+    log_tempo,
+    copiar_linha_com_formula,
+    filtrar_linhas,
+    obter_ultima_linha_com_dados,
+)
+
+
+def abrir_planilhas():
+    """Abre planilha de origem e destino, retornando workbooks e worksheets."""
+
+    # Diretório onde os arquivos estao
+    dir_base = Path(__file__).resolve().parent / "data"
+
+    # Onde vamos filtrar os dados, para copiar na planilha de destino
+    # Filtros
+    # - (Resolvidos e Fechados) vão para abra - [Resolvidos-Fechados]
+    # - Diferentes de (Resolvidos e Fechados) vão para RI - [RI]
+    wb_origem_filtros = load_workbook(
+        dir_base / "uploads" / "Filtro Incidentes (Jira).xlsx"
+    )
+    ws_origem_filtros = wb_origem_filtros.active
+
+    # Planilha de destino - [Relatório]
+    wb_destino_relatorio = load_workbook(
+        dir_base / "Relatório Incidentes_Garantia_Projetos_v5.xlsx"
+    )
+    ws_destino_resolvidos_fechados = wb_destino_relatorio["Resolvidos-Fechados"]
+    ws_destino_ri = wb_destino_relatorio["RI"]
+    ws_destino_projetos = wb_destino_relatorio["Projetos"]
+
+    # Planilha de origem - [Extração de Projetos]
+    wb_origem_projetos = load_workbook(dir_base / "uploads" / "Projetos (Jira).xlsx")
+    ws_origem_projetos = wb_origem_projetos.active
+
+    return (
+        wb_origem_filtros,
+        ws_origem_filtros,
+        wb_destino_relatorio,
+        ws_destino_resolvidos_fechados,
+        ws_destino_ri,
+        wb_origem_projetos,
+        ws_origem_projetos,
+        ws_destino_projetos,
+    )
+
+
+def preparar_mapeamento(ws_origem, ws_destino, mapa_colunas=None):
+    """Prepara índices e colunas para cópia entre origem e destino."""
+    cabecalhos_origem = [cell.value for cell in ws_origem[1]]
+    cabecalhos_destino = [cell.value for cell in ws_destino[1]]
+
+    indices_origem = {name: idx + 1 for idx, name in enumerate(cabecalhos_origem)}
+    indices_destino = {name: idx + 1 for idx, name in enumerate(cabecalhos_destino)}
+
+    # Se não passar mapa_colunas, assume colunas iguais
+    if mapa_colunas is None:
+        mapa_colunas = {
+            col: col for col in cabecalhos_destino if col in cabecalhos_origem
+        }
+
+    # Colunas do destino que devem ser copiadas
+    colunas_para_copiar = [
+        indices_destino[dest] for dest in mapa_colunas.keys() if dest in indices_destino
+    ]
+
+    return mapa_colunas, indices_origem, indices_destino, colunas_para_copiar
+
+
+def preparar_destino(ws_destino, linha_modelo: int = 2):
+    """Limpa a planilha de destino, mantendo a linha modelo."""
+    if ws_destino.max_row > linha_modelo:
+        ws_destino.delete_rows(linha_modelo + 1, ws_destino.max_row - linha_modelo)
+    print(f"Após limpeza, '{ws_destino.title}' tem {ws_destino.max_row} linhas")
+
+
+def copiar_para_aba(
+    ws_destino,
+    linha_modelo,
+    linhas_origem,
+    ws_origem,
+    mapa_colunas,
+    indice_origem,
+    indice_destino,
+    colunas_para_copiar,
+    ajustar_formulas: bool = True,
+    colunas_extras: list[str] = None,
+):
+    """Copia linhas da origem para a aba de destino mantendo formatação e fórmulas."""
+    linha_destino = 2
+
+    for linha_origem in linhas_origem:
+        copiar_linha_com_formula(
+            ws_destino,
+            linha_origem=linha_modelo,
+            linha_destino=linha_destino,
+            colunas=colunas_para_copiar,
+            colunas_extras=colunas_extras if colunas_extras else [],
+            ajustar_formulas=ajustar_formulas,
+        )
+
+        for coluna_destino, coluna_origem in mapa_colunas.items():
+            idx_dest = indice_destino.get(coluna_destino)
+            idx_origem = indice_origem.get(coluna_origem)
+            if idx_dest is None or idx_origem is None:
+                continue
+
+            valor_origem = ws_origem.cell(row=linha_origem, column=idx_origem).value
+            ws_destino.cell(row=linha_destino, column=idx_dest).value = valor_origem
+
+        linha_destino += 1
+
+    return linha_destino - 2
+
+
+def obter_ultima_linha(ws, coluna_chave):
+    """
+    Retorna o índice da última linha com dados em uma coluna chave.
+
+    Args:
+        ws: Worksheet (aba do Excel)
+        coluna_chave (str): Nome do cabeçalho da coluna usada como referência.
+
+    Returns:
+        int: Número da última linha com dados.
+    """
+    cabecalho = [cell.value for cell in ws[1]]
+    if coluna_chave not in cabecalho:
+        raise ValueError(
+            f"Coluna '{coluna_chave}' não encontrada no cabeçalho da aba {ws.title}"
+        )
+
+    idx_col = cabecalho.index(coluna_chave) + 1
+    return obter_ultima_linha_com_dados(ws, idx_col)
+
+
+def processar_rf(ws_origem, ws_destino, ultima_linha=None):
+    # Limpar aba de destino
+    preparar_destino(ws_destino, linha_modelo=145)
+
+    mapa_colunas, indice_origem, indice_destino, colunas_para_copiar = (
+        preparar_mapeamento(ws_origem, ws_destino, MAPEAMENTO_COLUNAS)
+    )
+
+    # Copiar para RF (filtrando status = 'Resolvido' e 'Finalizado')
+    linhas_para_RF = filtrar_linhas(
+        ws_origem,
+        indice_origem["Status"],
+        incluir=["Resolvido", "Finalizado"],
+        linha_inicial=2,
+        linha_final=ultima_linha,
+    )
+    total_copiados = copiar_para_aba(
+        ws_destino,
+        linha_modelo=2,
+        linhas_origem=linhas_para_RF,
+        ws_origem=ws_origem,
+        mapa_colunas=mapa_colunas,
+        indice_origem=indice_origem,
+        indice_destino=indice_destino,
+        colunas_para_copiar=colunas_para_copiar,
+        # colunas_extras=["G", "H"],
+    )
+    print(f"Total de registros copiados para Resolvidos e Fechados: {total_copiados}")
+
+
+def processar_ri(ws_origem, ws_destino, ultima_linha=None):
+    # Limpar aba de destino
+    preparar_destino(ws_destino)
+
+    indice_origem, indice_destino, colunas_para_copiar = (
+        preparar_mapeamento(ws_origem, ws_destino, MAPEAMENTO_COLUNAS)
+    )
+
+    print(f"[DEBUG] Colunas a copiar: {colunas_para_copiar}")
+
+    # Copiar para RI (filtrando status != 'Resolvido' e 'Finalizado')
+    linhas_para_RI = filtrar_linhas(
+        ws_origem,
+        indice_origem["Situação"],
+        excluir=["Resolvido", "Finalizado"],
+        linha_inicial=2,
+        linha_final=ultima_linha,
+    )
+    print(f"Linhas filtradas para RI: {len(linhas_para_RI)}")
+
+    total_copiados = copiar_para_aba(
+        ws_destino,
+        linha_modelo=2,
+        linhas_origem=linhas_para_RI,
+        ws_origem=ws_origem,
+        mapa_colunas=colunas_para_copiar,
+        indice_origem=indice_origem,
+        indice_destino=indice_destino,
+        colunas_para_copiar=colunas_para_copiar,
+        # colunas_extras=["G", "H"],
+    )
+    print(f"Total de registros copiados para RI: {total_copiados}")
+
+
+def processar_projetos(ws_origem, ws_destino, ultima_linha=None):
+    # Limpar aba de destino
+    preparar_destino(ws_destino)
+
+    # prepara mapeamento entre origem e destino
+    mapa_colunas, indice_origem, indice_destino, colunas_para_copiar = (
+        preparar_mapeamento(ws_origem, ws_destino)
+    )
+    print(f"[DEBUG] Colunas a copiar: {colunas_para_copiar}")
+
+    linhas = list(range(2, ultima_linha + 1))
+    total_copiados = copiar_para_aba(
+        ws_destino,
+        linha_modelo=2,
+        linhas_origem=linhas,
+        ws_origem=ws_origem,
+        mapa_colunas=mapa_colunas,
+        indice_origem=indice_origem,
+        indice_destino=indice_destino,
+        colunas_para_copiar=colunas_para_copiar,
+        ajustar_formulas=False,
+    )
+    print(f"Total de registros copiados para Projetos: {total_copiados}")
+
+
+def main():
+    # Diretório onde os arquivos estao
+    dir_base = Path(__file__).resolve().parent / "data"
+    
+    # Abrir planilhas
+    (
+        wb_origem_filtros,
+        ws_origem_filtros,
+        wb_destino_relatorio,
+        ws_destino_relatorio,
+        ws_destino_ri,
+        wb_origem_projetos,
+        ws_origem_projetos,
+        ws_destino_projetos,
+    ) = abrir_planilhas()
+
+    print(f"Planilha de origem ~ Filtros: {wb_origem_filtros.sheetnames}")
+    print(f"Planilha de destino ~ Relatório: {wb_destino_relatorio.sheetnames}")
+
+    # Aqui escolhemos qual coluna serve de referência
+    ultima_linha = obter_ultima_linha(ws_origem_filtros, "Chave")
+
+    # [Resolvidos e Fechados]
+    # processar_rf(ws_origem_filtros, ws_destino_relatorio, ultima_linha)
+
+    # with log_tempo("Copia de RI"):
+    #     # [RI - Chamados Abertos]
+    #     processar_ri(ws_origem_filtros, ws_destino_ri, ultima_linha)
+
+    with log_tempo("Copia de Projetos"):
+        # [Projetos]
+        processar_projetos(ws_origem_projetos, ws_destino_projetos, ultima_linha)
+
+    # Salvar planilha
+    wb_destino_relatorio.save(dir_base / "Relatório Incidentes_Garantia_Projetos_v5_(2).xlsx")
+    print("Planilha salva com sucesso.")
+
+    # Fechar os workbooks
+    wb_origem_filtros.close()
+    wb_destino_relatorio.close()
+    wb_origem_projetos.close()
+
+
+if __name__ == "__main__":
+    main()
