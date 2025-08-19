@@ -43,12 +43,11 @@ def processar_arquivo_xlsx(caminho_origem: Path, caminho_destino: Path):
 
         # Etapa 1: Remover imagens PRIMEIRO (antes de outras modificações)
         total_imagens = 0
-        # Duas abordagens para capturar diferentes tipos de imagens
         for shape in list(sheet.Shapes):  # Usamos list() para criar uma cópia
-            if shape.Type in [13, 1]:  # msoPicture (13) ou msoAutoShape (1)
-                shape.Delete()
+            if shape.TopLeftCell.Row == 1:  # Verifica se a imagem está na linha 1
+                shape.Delete()  # Remove a imagem
                 total_imagens += 1
-        log(f"Total de imagens removidas: {total_imagens}")
+                log(f"Total de imagens removidas: {total_imagens}")
 
         # Etapa 2: Remover linhas 1-3
         sheet.Rows("1:3").Delete()
