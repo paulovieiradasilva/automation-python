@@ -54,53 +54,6 @@ def ajustar_formula_linha(formula: str, linha_origem: int, linha_destino: int) -
     return pattern.sub(repl, formula)
 
 
-def copiar_linha_com_formula_(
-    ws: Worksheet,
-    linha_origem: int,
-    linha_destino: int,
-    colunas: list[int] = None,
-    colunas_extras: list[str] = None,
-):
-    """
-    Copia uma linha para outra linha dentro da mesma planilha,
-    mantendo formatação e ajustando fórmulas relativas automaticamente.
-
-    colunas: lista de índices de colunas para copiar. Se None, copia todas.
-    colunas_extras: lista de letras de colunas adicionais a copiar.
-    """
-    if colunas is None:
-        colunas = list(range(1, ws.max_column + 1))
-
-    # Adiciona colunas extras, convertendo de letra para índice
-    if colunas_extras:
-        for letra in colunas_extras:
-            idx = column_index_from_string(letra)
-            if idx not in colunas:
-                colunas.append(idx)
-        colunas.sort()
-
-    for col in colunas:
-        cel_origem = ws.cell(row=linha_origem, column=col)
-        cel_dest = ws.cell(row=linha_destino, column=col)
-
-        # Copiar valor ou ajustar fórmula
-        if cel_origem.data_type == "f":
-            cel_dest.value = ajustar_formula_linha(
-                cel_origem.value, linha_origem, linha_destino
-            )
-        elif cel_origem.value is not None:
-            cel_dest.value = cel_origem.value
-
-        # Copiar estilos
-        if cel_origem.has_style:
-            cel_dest.font = copy(cel_origem.font)
-            cel_dest.border = copy(cel_origem.border)
-            cel_dest.fill = copy(cel_origem.fill)
-            cel_dest.number_format = copy(cel_origem.number_format)
-            cel_dest.protection = copy(cel_origem.protection)
-            cel_dest.alignment = copy(cel_origem.alignment)
-
-
 def copiar_linha_com_formula(
     ws: Worksheet,
     linha_origem: int,
@@ -150,46 +103,6 @@ def copiar_linha_com_formula(
             cel_dest.alignment = copy(cel_origem.alignment)
 
 
-def filtrar_linhas_(
-    ws: Worksheet,
-    col_status: int,
-    incluir: list[str] = None,
-    excluir: list[str] = None,
-    linha_inicial: int = 2,
-    linha_final: int = None,
-) -> list[int]:
-    """
-    Filtra linhas de uma planilha pelo valor da coluna 'Status'.
-
-    Parâmetros:
-    - ws: planilha de onde serão filtradas as linhas.
-    - col_status: índice da coluna 'Status' (inteiro).
-    - incluir: lista de status que devem ser incluídos. Se None, inclui todos.
-    - excluir: lista de status que devem ser excluídos. Se None, não exclui nenhum.
-    - linha_inicial: primeira linha a ser verificada (padrão 2, após cabeçalho).
-    - linha_final: última linha a ser verificada (padrão None = até ws.max_row).
-
-    Retorna:
-    - lista de números das linhas que passam no filtro.
-    """
-    if linha_final is None:
-        linha_final = ws.max_row
-
-    linhas = []
-    for row in range(linha_inicial, linha_final + 1):
-        status = ws.cell(row=row, column=col_status).value
-        print(f"[DEBUG] Linha {row} -> Status: {status}")
-
-        if incluir and status not in incluir:
-            continue
-        if excluir and status in excluir:
-            continue
-        linhas.append(row)
-
-    print(f"[DEBUG] Total de linhas filtradas: {len(linhas)}")
-    return linhas
-
-
 def filtrar_linhas(
     ws: Worksheet,
     col_status: int,
@@ -216,8 +129,7 @@ def filtrar_linhas(
             continue
 
         linhas.append(row)
-
-    print(f"[DEBUG] Total de linhas filtradas: {len(linhas)}")
+        
     return linhas
 
 
