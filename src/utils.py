@@ -3,7 +3,6 @@ from pathlib import Path
 from copy import copy
 from contextlib import contextmanager
 import time
-import unicodedata
 
 from openpyxl.utils import column_index_from_string
 from openpyxl.worksheet.worksheet import Worksheet
@@ -129,7 +128,7 @@ def filtrar_linhas(
             continue
 
         linhas.append(row)
-        
+
     return linhas
 
 

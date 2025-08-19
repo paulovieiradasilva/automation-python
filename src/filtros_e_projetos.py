@@ -1,5 +1,4 @@
 from pathlib import Path
-import json
 from openpyxl import load_workbook
 
 from config import MAPEAMENTO_COLUNAS, COLUNAS_RELATORIO
