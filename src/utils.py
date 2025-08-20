@@ -129,6 +129,8 @@ def filtrar_linhas(
 
         linhas.append(row)
 
+    log(f"Linhas filtradas para aba '{ws.title}': {len(linhas)}")
+
     return linhas
 
 

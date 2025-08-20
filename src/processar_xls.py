@@ -112,7 +112,7 @@ def main():
     folder_data.mkdir(parents=True, exist_ok=True)
 
     # Limpeza inicial
-    with log_tempo("Limpeza da pasta uploads"):
+    with log_tempo("[DIRETORIO] Limpeza da pasta uploads"):
         limpar_uploads(folder_data)
 
     mapeamento = [
@@ -126,7 +126,7 @@ def main():
         (r"Relatório RM \(Jira\).*\.xls", "Relatório RM (Jira).xlsx"),
     ]
 
-    with log_tempo("Processamento de arquivos"):
+    with log_tempo("[ARQUIVOS] Conversão e tratamento dos .xls"):
         processar_arquivos_xls(folder_data, mapeamento, del_xls=False)
 
 
