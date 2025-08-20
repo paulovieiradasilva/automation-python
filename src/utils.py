@@ -26,14 +26,33 @@ def log_tempo(mensagem="Processo finalizado"):
         log(f"{mensagem} em {int(minutos)} minutos e {segundos:.2f} segundos.")
 
 
+def preparar_pasta(subpasta: str | None = None) -> Path:
+    """
+    Garante que a estrutura de pastas de extração exista:
+    - Sempre cria a pasta base 'data' no diretório do script.
+    - Se 'subpasta' for informado, cria dentro de 'data'.
+
+    Retorna o Path absoluto da pasta resultante.
+    """
+    base = Path(__file__).resolve().parent / "data"
+    base.mkdir(parents=True, exist_ok=True)
+
+    if subpasta:
+        destino = base / subpasta
+        destino.mkdir(parents=True, exist_ok=True)
+        return destino
+
+    return base
+
+
 def localizar_arquivo(pasta: Path, nome_arquivo: str) -> Path | None:
     """Encontra um arquivo que corresponde ao padrão especificado na pasta."""
     log(f"Buscando o arquivo: {nome_arquivo}")
     for arquivo in pasta.glob("*.xls"):
         if re.match(nome_arquivo, arquivo.name):
-            log(f"Arquivo encontrado: {arquivo.name}")
+            log(f"[ARQUIVOS] Encontrado o: {arquivo.name}")
             return arquivo
-    log("Nenhum arquivo correspondente encontrado.")
+    log("[ARQUIVOS] Nenhum arquivo encontrado.")
     return None
 
 
@@ -129,7 +148,7 @@ def filtrar_linhas(
 
         linhas.append(row)
 
-    log(f"Linhas filtradas para aba '{ws.title}': {len(linhas)}")
+    log(f"[RELATÓRIO] Linhas filtradas para aba '{ws.title}': {len(linhas)}")
 
     return linhas
 
@@ -146,4 +165,4 @@ def obter_ultima_linha_com_dados(ws, coluna_chave: int):
 def salvar_excel(workbook, caminho: Path):
     with log_tempo("Salvando arquivo"):
         workbook.SaveAs(str(caminho), FileFormat=51)
-        log(f"Arquivo salvo como: {caminho}")
+        log(f"[ARQUIVOS] Arquivo salvo como: {caminho}")

@@ -1,13 +1,15 @@
 from pathlib import Path
 from openpyxl import load_workbook
 
-from config import MAPEAMENTO_COLUNAS, COLUNAS_RELATORIO
+from processar_xls import processar_arquivos_xls
+from config import COLUNAS_RELATORIO, MAPEAMENTO_COLUNAS
 from utils import (
     log,
     log_tempo,
-    copiar_linha_com_formula,
     filtrar_linhas,
+    copiar_linha_com_formula,
     obter_ultima_linha_com_dados,
+    preparar_pasta,
 )
 
 
@@ -258,48 +260,63 @@ def processar_projetos(ws_origem, ws_destino):
         colunas_para_copiar=colunas_para_copiar,
         ajustar_formulas=False,
     )
-    log(f"Total de registros copiados para aba {ws_destino.title}: {total_copiados}")
+    log(f"[RELATÓRIO] Total de registros copiados para aba {ws_destino.title}: {total_copiados}")
 
 
 def main():
-    with log_tempo("[RELATÓRIOS] ~ Processamento"):
+    with log_tempo("[PROCESSAMENTO] Garantias"):
         # Diretório onde os arquivos estao
-        dir_base = Path(__file__).resolve().parent / "data"
+        dir_base = preparar_pasta()
 
-        # Abrir planilhas
-        (
-            wb_origem_filtros,
-            ws_origem_filtros,
-            wb_destino_relatorio,
-            ws_destino_relatorio,
-            ws_destino_ri,
-            wb_origem_projetos,
-            ws_origem_projetos,
-            ws_destino_projetos,
-        ) = abrir_planilhas()
+        # Mapea a extração com o nome do .xlsx que será criado.
+        mapeamento = [
+            (
+                r"Filtro Incidentes - Garantia de Projetos \(Jira\).*\.xls",
+                "Filtro Incidentes (Jira).xlsx",
+            ),
+            (r"Projetos \(Jira\).*\.xls", "Projetos (Jira).xlsx"),
+            (r"Defeitos SKY AD \(Jira\).*\.xls", "Defeitos SKY AD (Jira).xlsx"),
+            (r"Relatório RM \(Jira\).*\.xls", "Relatório RM (Jira).xlsx"),
+        ]
 
-        with log_tempo("Copia de projetos"):
-            # [Projetos]
-            processar_projetos(ws_origem_projetos, ws_destino_projetos)
+        with log_tempo("[ARQUIVOS] Conversão dos .xls paa .xlsx"):
+            processar_arquivos_xls(dir_base, mapeamento, del_xls=False)
 
-        with log_tempo("Copia de RI"):
-            # [RI - Chamados Abertos]
-            processar_ri(ws_origem_filtros, ws_destino_ri)
+        with log_tempo("[RELATÓRIOS] ~ Relatório de Garantias"):
+            # Abrir planilhas
+            (
+                wb_origem_filtros,
+                ws_origem_filtros,
+                wb_destino_relatorio,
+                ws_destino_relatorio,
+                ws_destino_ri,
+                wb_origem_projetos,
+                ws_origem_projetos,
+                ws_destino_projetos,
+            ) = abrir_planilhas()
 
-        with log_tempo("Copia de Resolvidos e Fechados"):
-            # [Resolvidos e Fechados]
-            processar_rf(ws_origem_filtros, ws_destino_relatorio)
+            with log_tempo("Copia de projetos"):
+                # [Projetos]
+                processar_projetos(ws_origem_projetos, ws_destino_projetos)
 
-    # Salvar planilha
-    wb_destino_relatorio.save(
-        dir_base / "Relatório Incidentes_Garantia_Projetos_v5_(2).xlsx"
-    )
-    log("Relatório salvo com sucesso.")
+            with log_tempo("Copia de RI"):
+                # [RI - Chamados Abertos]
+                processar_ri(ws_origem_filtros, ws_destino_ri)
 
-    # Fechar os workbooks
-    wb_origem_filtros.close()
-    wb_destino_relatorio.close()
-    wb_origem_projetos.close()
+            with log_tempo("Copia de Resolvidos e Fechados"):
+                # [Resolvidos e Fechados]
+                processar_rf(ws_origem_filtros, ws_destino_relatorio)
+
+        # Salvar planilha
+        wb_destino_relatorio.save(
+            dir_base / "Relatório Incidentes_Garantia_Projetos_v5_(2).xlsx"
+        )
+        log("Relatório salvo com sucesso.")
+
+        # Fechar os workbooks
+        wb_origem_filtros.close()
+        wb_destino_relatorio.close()
+        wb_origem_projetos.close()
 
 
 if __name__ == "__main__":

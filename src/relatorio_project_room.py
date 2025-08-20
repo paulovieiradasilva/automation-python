@@ -2,12 +2,14 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from config import MAPEAMENTO_COLUNAS, COLUNAS_RELATORIO
+from processar_xls import processar_arquivos_xls
 from utils import (
     log,
     log_tempo,
     copiar_linha_com_formula,
     filtrar_linhas,
     obter_ultima_linha_com_dados,
+    preparar_pasta,
 )
 
 
@@ -198,34 +200,45 @@ def processar_ri(ws_origem, ws_destino):
 
 
 def main():
-    with log_tempo("[RELATÓRIOS] ~ Processamento"):
+    with log_tempo("[PROCESSAMENTO] Project Room"):
         # Diretório onde os arquivos estao
-        dir_base = Path(__file__).resolve().parent / "data"
+        data = preparar_pasta()
 
-        # Abrir planilhas
-        (
-            wb_origem_filtros,
-            ws_origem_filtros,
-            wb_destino_relatorio,
-            ws_destino_relatorio,
-            ws_destino_ri,
-        ) = abrir_planilhas()
+        # Mapea a extração com o nome do .xlsx que será criado.
+        mapeamento = [
+            (r"Project Room \(Jira\).*\.xls", "Project Room (Jira).xlsx"),
+        ]
 
-        with log_tempo("Copia de RI"):
-            # [RI - Chamados Abertos]
-            processar_ri(ws_origem_filtros, ws_destino_ri)
+        with log_tempo("[ARQUIVOS] Conversão dos .xls paa .xlsx"):
+            processar_arquivos_xls(data, mapeamento, del_xls=False)
 
-        with log_tempo("Copia de Resolvidos e Fechados"):
-            # [Resolvidos e Fechados]
-            processar_rf(ws_origem_filtros, ws_destino_relatorio)
+        with log_tempo("[RELATÓRIOS] ~ Relatório de Project Room"):
+            # Abrir planilhas
+            (
+                wb_origem_filtros,
+                ws_origem_filtros,
+                wb_destino_relatorio,
+                ws_destino_relatorio,
+                ws_destino_ri,
+            ) = abrir_planilhas()
 
-    # Salvar planilha
-    wb_destino_relatorio.save(dir_base / "Relatório de Incidentes_Project Room_v1_(2).xlsx")
-    log("Relatório salvo com sucesso.")
+            with log_tempo("Copia para Relatório de Incidentes - RI"):
+                # [RI - Chamados Abertos]
+                processar_ri(ws_origem_filtros, ws_destino_ri)
 
-    # Fechar os workbooks
-    wb_origem_filtros.close()
-    wb_destino_relatorio.close()
+            with log_tempo("Copia para Resolvidos e Fechados - RI"):
+                # [Resolvidos e Fechados]
+                processar_rf(ws_origem_filtros, ws_destino_relatorio)
+
+        # Salvar planilha
+        wb_destino_relatorio.save(
+            data / "Relatório de Incidentes_Project Room_v1_(2).xlsx"
+        )
+        log("Relatório salvo com sucesso.")
+
+        # Fechar os workbooks
+        wb_origem_filtros.close()
+        wb_destino_relatorio.close()
 
 
 if __name__ == "__main__":

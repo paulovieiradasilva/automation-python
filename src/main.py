@@ -6,7 +6,7 @@ from utils import log_tempo
 
 
 def main():
-    with log_tempo("[MASTER] Iniciando execução"):
+    with log_tempo("[MASTER] execução"):
         processar_xls.main()
         relatorio_garantias.main()
         relatorio_project_room.main()
