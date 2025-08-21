@@ -263,13 +263,13 @@ def main():
 
         # Mapea a extração com o nome do .xlsx que será criado.
         mapeamento = [
+            (r"Relatório RM \(Jira\).*\.xls", "Relatório RM (Jira).xlsx"),
             (
                 r"Filtro Incidentes - Garantia de Projetos \(Jira\).*\.xls",
                 "Filtro Incidentes (Jira).xlsx",
             ),
             (r"Projetos \(Jira\).*\.xls", "Projetos (Jira).xlsx"),
             (r"Defeitos SKY AD \(Jira\).*\.xls", "Defeitos SKY AD (Jira).xlsx"),
-            (r"Relatório RM \(Jira\).*\.xls", "Relatório RM (Jira).xlsx"),
         ]
 
         with log_tempo("[ARQUIVOS] Conversão dos .xls paa .xlsx"):
