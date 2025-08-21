@@ -26,6 +26,16 @@ def log_tempo(mensagem="Processo finalizado"):
         log(f"{mensagem} em {int(minutos)} minutos e {segundos:.2f} segundos.")
 
 
+def preparar_destino(ws_destino, linha_modelo: int = 2):
+    """Limpa a planilha de destino, mantendo a linha modelo."""
+
+    if ws_destino.max_row > linha_modelo:
+        ws_destino.delete_rows(linha_modelo + 1, ws_destino.max_row - linha_modelo)
+    log(
+        f"[RELATÓRIO] Após limpeza, '{ws_destino.title}' tem {ws_destino.max_row} linhas"
+    )
+
+
 def preparar_pasta(subpasta: str | None = None) -> Path:
     """
     Garante que a estrutura de pastas de extração exista:
@@ -47,12 +57,12 @@ def preparar_pasta(subpasta: str | None = None) -> Path:
 
 def localizar_arquivo(pasta: Path, nome_arquivo: str) -> Path | None:
     """Encontra um arquivo que corresponde ao padrão especificado na pasta."""
-    log(f"Buscando o arquivo: {nome_arquivo}")
+    log(f"[ARQUIVO] Buscando o arquivo: {nome_arquivo}")
     for arquivo in pasta.glob("*.xls"):
         if re.match(nome_arquivo, arquivo.name):
-            log(f"[ARQUIVOS] Encontrado o: {arquivo.name}")
+            log(f"[ARQUIVO] Encontrado o: {arquivo.name}")
             return arquivo
-    log("[ARQUIVOS] Nenhum arquivo encontrado.")
+    log("[ARQUIVO] Nenhum arquivo encontrado.")
     return None
 
 
@@ -163,6 +173,6 @@ def obter_ultima_linha_com_dados(ws, coluna_chave: int):
 
 
 def salvar_excel(workbook, caminho: Path):
-    with log_tempo("Salvando arquivo"):
+    with log_tempo("[ARQUIVO] Salva arquivo"):
         workbook.SaveAs(str(caminho), FileFormat=51)
-        log(f"[ARQUIVOS] Arquivo salvo como: {caminho}")
+        log(f"[ARQUIVOS] Arquivo salvo como: {caminho.name}")

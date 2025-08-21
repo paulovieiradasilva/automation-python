@@ -1,6 +1,6 @@
 from pathlib import Path
 import win32com.client as win32
-from utils import log, log_tempo, localizar_arquivo, preparar_pasta
+from utils import log, log_tempo, localizar_arquivo, preparar_pasta, salvar_excel
 
 
 def limpar_uploads(pasta_base: Path) -> int:
@@ -47,11 +47,11 @@ def processar_arquivo_xlsx(caminho_origem: Path, caminho_destino: Path):
             if shape.TopLeftCell.Row == 1:  # Verifica se a imagem está na linha 1
                 shape.Delete()  # Remove a imagem
                 total_imagens += 1
-                log(f"Total de imagens removidas: {total_imagens}")
+                log(f"[TRATAMENTO] Total de imagens removidas: {total_imagens}")
 
         # Etapa 2: Remover linhas 1-3
         sheet.Rows("1:3").Delete()
-        log("Linhas 1, 2 e 3 removidas.")
+        log("[TRATAMENTO] Linhas 1, 2 e 3 removidas.")
 
         # Etapa 3: Verificar e remover última linha se necessário
         ultima_linha = sheet.UsedRange.Rows.Count
@@ -60,23 +60,24 @@ def processar_arquivo_xlsx(caminho_origem: Path, caminho_destino: Path):
         ]
         if any(valor and "Gerado em" in str(valor) for valor in valores_ultima_linha):
             sheet.Rows(ultima_linha).Delete()
-            log(f"Última linha ({ultima_linha}) contendo 'Gerado em' removida.")
+            log(
+                f"[TRATAMENTO] Última linha ({ultima_linha}) contendo 'Gerado em' removida."
+            )
 
         # Etapa 4: Ajustar formatação
         sheet.UsedRange.WrapText = False
-        log("Quebra de texto desativada.")
+        log("[TRATAMENTO] Quebra de texto desativada.")
 
         # Garantir que a pasta de destino existe
         caminho_destino.parent.mkdir(parents=True, exist_ok=True)
 
         # Salvar como XLSX na pasta uploads
-        workbook.SaveAs(str(caminho_destino), FileFormat=51)  # 51 = xlsx
-        log(f"Arquivo salvo em: {caminho_destino}")
+        salvar_excel(workbook, caminho_destino)
 
         return caminho_destino
 
     except Exception as e:
-        log(f"Erro ao processar arquivo: {e}")
+        log(f"[TRATAMENTO] Erro ao processar arquivo: {e}")
         return None
 
     finally:
@@ -89,19 +90,19 @@ def processar_arquivos_xls(folder_data: Path, arquivos_info: list[dict], del_xls
     for regex, novo_nome in arquivos_info:
         arquivo = localizar_arquivo(folder_data, regex)
         if not arquivo:
-            log(f"[ARQUIVOS] Nenhum arquivo encontrado para padrão: {regex}")
+            log(f"[ARQUIVO] Nenhum arquivo encontrado para padrão: {regex}")
             continue
 
         # Definir caminho de destino na pasta uploads
         caminho_destino = folder_data / "uploads" / novo_nome
 
         # Processar o arquivo
-        with log_tempo(f"[ARQUIVOS] Processando {arquivo.name}"):
+        with log_tempo(f"[ARQUIVO] Processando {arquivo.name}"):
             resultado = processar_arquivo_xlsx(arquivo, caminho_destino)
 
             if resultado and del_xls and arquivo.suffix.lower() == ".xls":
                 arquivo.unlink()
-                log(f"[ARQUIVOS] .xls original removido: {arquivo}")
+                log(f"[ARQUIVO] .xls original removido: {arquivo}")
 
 
 def main():

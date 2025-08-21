@@ -10,6 +10,7 @@ from utils import (
     copiar_linha_com_formula,
     obter_ultima_linha_com_dados,
     preparar_pasta,
+    preparar_destino,
 )
 
 
@@ -93,14 +94,6 @@ def preparar_mapeamento_simples(ws_origem, ws_destino):
     ]
 
     return mapa_colunas, indices_origem, indices_destino, colunas_para_copiar
-
-
-def preparar_destino(ws_destino, linha_modelo: int = 2):
-    """Limpa a planilha de destino, mantendo a linha modelo."""
-
-    if ws_destino.max_row > linha_modelo:
-        ws_destino.delete_rows(linha_modelo + 1, ws_destino.max_row - linha_modelo)
-    log(f"Após limpeza, '{ws_destino.title}' tem {ws_destino.max_row} linhas")
 
 
 def copiar_para_aba(
@@ -295,15 +288,15 @@ def main():
                 ws_destino_projetos,
             ) = abrir_planilhas()
 
-            with log_tempo("Copia de projetos"):
+            with log_tempo("[RELATÓRIO] Copia de projetos"):
                 # [Projetos]
                 processar_projetos(ws_origem_projetos, ws_destino_projetos)
 
-            with log_tempo("Copia de RI"):
+            with log_tempo("[RELATÓRIO] Copia para  - RI"):
                 # [RI - Chamados Abertos]
                 processar_ri(ws_origem_filtros, ws_destino_ri)
 
-            with log_tempo("Copia de Resolvidos e Fechados"):
+            with log_tempo("[RELATÓRIO] Copia para  - RF"):
                 # [Resolvidos e Fechados]
                 processar_rf(ws_origem_filtros, ws_destino_relatorio)
 
