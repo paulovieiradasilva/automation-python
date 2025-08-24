@@ -86,6 +86,25 @@ def processar_arquivo_xlsx(caminho_origem: Path, caminho_destino: Path):
         excel.Quit()
 
 
+def processar_arquivos_xls(folder_data: Path, arquivos_info: list[dict], del_xls: bool):
+    for regex, novo_nome in arquivos_info:
+        arquivo = localizar_arquivo(folder_data, regex)
+        if not arquivo:
+            log(f"[ARQUIVO] Nenhum arquivo encontrado para padrão: {regex}")
+            continue
+
+        # Definir caminho de destino na pasta uploads
+        caminho_destino = folder_data / "uploads" / novo_nome
+
+        # Processar o arquivo
+        with log_tempo(f"[ARQUIVO] Processando {arquivo.name}"):
+            resultado = processar_arquivo_xlsx(arquivo, caminho_destino)
+
+            if resultado and del_xls and arquivo.suffix.lower() == ".xls":
+                arquivo.unlink()
+                log(f"[ARQUIVO] .xls original removido: {arquivo}")
+
+
 def main():
     with log_tempo("[PROCESSAMENTO] .xls para .xlsx"):
         # Diretório onde os arquivos estao
