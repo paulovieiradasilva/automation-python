@@ -1,6 +1,14 @@
+import time
 from pathlib import Path
 import win32com.client as win32
-from utils import log, log_tempo, localizar_arquivo, preparar_pasta, salvar_excel
+from utils import (
+    log,
+    log_tempo,
+    salvar_excel,
+    deletar_linhas,
+    preparar_pasta,
+    localizar_arquivo,
+)
 
 
 def limpar_uploads(pasta_base: Path) -> int:
@@ -23,56 +31,56 @@ def limpar_uploads(pasta_base: Path) -> int:
     return removidos
 
 
-def processar_arquivo_xlsx(caminho_origem: Path, caminho_destino: Path):
-    excel = win32.gencache.EnsureDispatch("Excel.Application")
-    excel.Visible = False
-    excel.DisplayAlerts = False
-    excel.ScreenUpdating = False
-    excel.EnableEvents = False
-    # excel.Calculation = win32.constants.xlCalculationManual
+def processar_arquivo_xlsx_(caminho_origem: Path, caminho_destino: Path, excel):
+    xlManual = -4135
+    xlAutomatic = -4105
 
     workbook = None
-
     try:
-        workbook = excel.Workbooks.Open(str(caminho_origem))
-        sheet = workbook.Sheets(1)
-        used_range = sheet.UsedRange
-        valores = used_range.Value  # tupla 2D de toda a planilha
+        with log_tempo("[TRATAMENTO] Abrir Excel (.xls)"):
+            workbook = excel.Workbooks.Open(str(caminho_origem))
+            sheet = workbook.Sheets(1)
+            sheet.DisplayPageBreaks = False
+            valores = sheet.UsedRange.Value
 
-        # --- Determinar linhas a remover em memória ---
-        linhas_para_remover = set()
+        # Determinar linhas para remover
+        linhas_para_remover = {1, 2, 3}
+        with log_tempo("[TRATAMENTO] Identificar última linha"):
+            ultima_linha = len(valores)
+            ultima_linha_valores = valores[-1][:5]
+            if any(
+                valor and "Gerado em" in str(valor) for valor in ultima_linha_valores
+            ):
+                linhas_para_remover.add(ultima_linha)
 
-        # Remover linhas 1-3
-        linhas_para_remover.update([1, 2, 3])
+        # Percorrer todas as linhas para remover conteúdo exato "SKYIT-182"
+        for idx, linha in enumerate(valores, start=1):
+            if any(valor == "SKYIT-182" for valor in linha):
+                linhas_para_remover.add(idx)
 
-        # Verificar última linha
-        ultima_linha = len(valores)
-        ultima_linha_valores = valores[-1][:5]  # primeiras 5 colunas
-        if any(valor and "Gerado em" in str(valor) for valor in ultima_linha_valores):
-            linhas_para_remover.add(ultima_linha)
+        # Remover imagem do topo (sempre a 1ª)
+        with log_tempo("[TRATAMENTO] Remover imagem topo"):
+            if sheet.Shapes.Count > 0:
+                sheet.Shapes(1).Delete()
+                log("[TRATAMENTO] Imagem do topo removida")
 
-        # --- Remover todas as imagens da linha 1 em batch ---
-        shapes_para_remover = [s for s in sheet.Shapes if s.TopLeftCell.Row == 1]
-        if shapes_para_remover:
-            sheet.Shapes.Range([s.Name for s in shapes_para_remover]).Delete()
-        log(f"[TRATAMENTO] Total de imagens removidas: {len(shapes_para_remover)}")
+        # Remover linhas
+        with log_tempo("[TRATAMENTO] Remover linhas"):
+            excel.Calculation = xlManual
+            deletar_linhas(sheet, linhas_para_remover)
+            excel.CutCopyMode = False
+            excel.Calculation = xlAutomatic
+        log(f"[TRATAMENTO] Linhas removidas: {sorted(linhas_para_remover)}")
 
-        # --- Deletar todas as linhas de uma vez em batch ---
-        if linhas_para_remover:
-            # Excel aceita intervalos consecutivos, então podemos ordenar e agrupar
-            for row in sorted(linhas_para_remover, reverse=True):
-                sheet.Rows(row).Delete()
-            log(f"[TRATAMENTO] Linhas removidas: {sorted(linhas_para_remover)}")
-
-        # --- Ajustar formatação de toda a UsedRange ---
-        sheet.UsedRange.WrapText = False
+        # Ajustar formatação
+        with log_tempo("[TRATAMENTO] Ajustar formatação"):
+            sheet.UsedRange.WrapText = False
         log("[TRATAMENTO] Quebra de texto desativada.")
 
-        # Garantir pasta destino
-        caminho_destino.parent.mkdir(parents=True, exist_ok=True)
-
         # Salvar
-        salvar_excel(workbook, caminho_destino)
+        caminho_destino.parent.mkdir(parents=True, exist_ok=True)
+        with log_tempo("[TRATAMENTO] Salvar arquivo"):
+            salvar_excel(workbook, caminho_destino)
         return caminho_destino
 
     except Exception as e:
@@ -82,27 +90,101 @@ def processar_arquivo_xlsx(caminho_origem: Path, caminho_destino: Path):
     finally:
         if workbook:
             workbook.Close(SaveChanges=False)
-        # excel.Calculation = win32.constants.xlCalculationAutomatic
-        excel.Quit()
+
+
+def processar_arquivo_xlsx(caminho_origem: Path, caminho_destino: Path, excel):
+    xlManual = -4135
+    xlAutomatic = -4105
+
+    workbook = None
+    try:
+        with log_tempo("[TRATAMENTO] Abrir arquivo (.xls)"):
+            workbook = excel.Workbooks.Open(str(caminho_origem))
+            sheet = workbook.Sheets(1)
+            sheet.DisplayPageBreaks = False
+            valores = sheet.UsedRange.Value
+
+        # Determinar linhas para remover
+        linhas_para_remover = {1, 2, 3}
+
+        with log_tempo("[TRATAMENTO] Identificar última linha e SKYIT-182"):
+            ultima_linha = len(valores)
+            ultima_linha_valores = valores[-1][:5]
+
+            # Verificar última linha "Gerado em"
+            if any(
+                valor and "Gerado em" in str(valor) for valor in ultima_linha_valores
+            ):
+                linhas_para_remover.add(ultima_linha)
+
+            # Identificar linhas com conteúdo exato "SKYIT-182" (mais performático)
+            linhas_skyit = [
+                idx
+                for idx, linha in enumerate(valores, start=1)
+                if "SKYIT-182" in linha
+            ]
+            linhas_para_remover.update(linhas_skyit)
+
+        # Remover imagem do topo (sempre a 1ª)
+        with log_tempo("[TRATAMENTO] Remover imagem topo"):
+            if sheet.Shapes.Count > 0:
+                sheet.Shapes(1).Delete()
+                log("[TRATAMENTO] Imagem do topo removida")
+
+        # Remover linhas
+        with log_tempo("[TRATAMENTO] Remover linhas"):
+            excel.Calculation = xlManual
+            deletar_linhas(sheet, linhas_para_remover)
+            excel.CutCopyMode = False
+            excel.Calculation = xlAutomatic
+        log(f"[TRATAMENTO] Linhas removidas: {sorted(linhas_para_remover)}")
+
+        # Ajustar formatação
+        with log_tempo("[TRATAMENTO] Ajustar formatação (Quebrar texto)"):
+            sheet.UsedRange.WrapText = False
+
+        # Salvar
+        caminho_destino.parent.mkdir(parents=True, exist_ok=True)
+        salvar_excel(workbook, caminho_destino)
+
+        return caminho_destino
+
+    except Exception as e:
+        log(f"[TRATAMENTO] Erro ao processar arquivo: {e}")
+        return None
+
+    finally:
+        if workbook:
+            workbook.Close(SaveChanges=False)
 
 
 def processar_arquivos_xls(folder_data: Path, arquivos_info: list[dict], del_xls: bool):
-    for regex, novo_nome in arquivos_info:
-        arquivo = localizar_arquivo(folder_data, regex)
-        if not arquivo:
-            log(f"[ARQUIVO] Nenhum arquivo encontrado para padrão: {regex}")
-            continue
 
-        # Definir caminho de destino na pasta uploads
-        caminho_destino = folder_data / "uploads" / novo_nome
+    excel = win32.gencache.EnsureDispatch("Excel.Application")
+    excel.Visible = False
+    excel.DisplayAlerts = False
+    excel.ScreenUpdating = False
+    excel.EnableEvents = False
 
-        # Processar o arquivo
-        with log_tempo(f"[ARQUIVO] Processando {arquivo.name}"):
-            resultado = processar_arquivo_xlsx(arquivo, caminho_destino)
+    try:
+        for regex, novo_nome in arquivos_info:
+            arquivo = localizar_arquivo(folder_data, regex)
+            if not arquivo:
+                log(f"[ARQUIVO] Nenhum arquivo encontrado para padrão: {regex}")
+                continue
 
-            if resultado and del_xls and arquivo.suffix.lower() == ".xls":
-                arquivo.unlink()
-                log(f"[ARQUIVO] .xls original removido: {arquivo}")
+            # Definir caminho de destino na pasta uploads
+            caminho_destino = folder_data / "uploads" / novo_nome
+
+            # Processar o arquivo
+            with log_tempo(f"[ARQUIVO] Processar {arquivo.name}"):
+                resultado = processar_arquivo_xlsx(arquivo, caminho_destino, excel)
+
+                if resultado and del_xls and arquivo.suffix.lower() == ".xls":
+                    arquivo.unlink()
+                    log(f"[ARQUIVO] .xls original removido: {arquivo}")
+    finally:
+        excel.Quit()
 
 
 def main():
@@ -111,7 +193,7 @@ def main():
         data = preparar_pasta()
 
         # Limpeza inicial
-        with log_tempo("[DIRETORIO] Limpeza da pasta uploads"):
+        with log_tempo("[DIRETORIO] Limpar pasta uploads"):
             limpar_uploads(data)
 
         mapeamento = [

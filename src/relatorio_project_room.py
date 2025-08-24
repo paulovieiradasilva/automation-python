@@ -197,15 +197,7 @@ def main():
         # Diretório onde os arquivos estao
         data = preparar_pasta()
 
-        # Mapea a extração com o nome do .xlsx que será criado.
-        mapeamento = [
-            (r"Project Room \(Jira\).*\.xls", "Project Room (Jira).xlsx"),
-        ]
-
-        with log_tempo("[ARQUIVOS] Conversão dos .xls paa .xlsx"):
-            processar_arquivos_xls(data, mapeamento, del_xls=False)
-
-        with log_tempo("[RELATÓRIOS] ~ Relatório de Project Room"):
+        with log_tempo("[RELATÓRIO] ~ Relatório de Project Room"):
             # Abrir planilhas
             (
                 wb_origem_filtros,
@@ -227,7 +219,7 @@ def main():
         wb_destino_relatorio.save(
             data / "Relatório de Incidentes_Project Room_v1_(2).xlsx"
         )
-        log("Relatório salvo com sucesso.")
+        log("[RELATÓRIO] Relatório salvo com sucesso.")
 
         # Fechar os workbooks
         wb_origem_filtros.close()

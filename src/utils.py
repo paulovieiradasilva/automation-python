@@ -172,7 +172,35 @@ def obter_ultima_linha_com_dados(ws, coluna_chave: int):
     )
 
 
+def deletar_linhas(sheet, linhas, log_prefix="[TRATAMENTO]"):
+    """Deleta múltiplas linhas em blocos consecutivos, reduzindo chamadas COM."""
+    if not linhas:
+        return
+
+    linhas = sorted(set(linhas))  # evita duplicados
+    blocos = []
+    inicio = fim = linhas[0]
+
+    for l in linhas[1:]:
+        if l == fim + 1:
+            fim = l
+        else:
+            blocos.append((inicio, fim))
+            inicio = fim = l
+    blocos.append((inicio, fim))
+
+    try:
+        for inicio, fim in reversed(blocos):
+            if inicio == fim:
+                sheet.Rows(inicio).Delete()
+            else:
+                sheet.Rows(f"{inicio}:{fim}").Delete()
+        log(f"{log_prefix} Linhas removidas: {linhas}")
+    except Exception as e:
+        log(f"{log_prefix} Erro ao remover linhas {linhas}: {e}")
+
+
 def salvar_excel(workbook, caminho: Path):
-    with log_tempo("[ARQUIVO] Salva arquivo"):
+    with log_tempo("[ARQUIVO] Salvar arquivo"):
         workbook.SaveAs(str(caminho), FileFormat=51)
-        log(f"[ARQUIVOS] Arquivo salvo como: {caminho.name}")
+        log(f"[ARQUIVO] Arquivo salvo como: {caminho.name}")

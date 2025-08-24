@@ -253,7 +253,9 @@ def processar_projetos(ws_origem, ws_destino):
         colunas_para_copiar=colunas_para_copiar,
         ajustar_formulas=False,
     )
-    log(f"[RELATÓRIO] Total de registros copiados para aba {ws_destino.title}: {total_copiados}")
+    log(
+        f"[RELATÓRIO] Total de registros copiados para aba {ws_destino.title}: {total_copiados}"
+    )
 
 
 def main():
@@ -261,21 +263,7 @@ def main():
         # Diretório onde os arquivos estao
         dir_base = preparar_pasta()
 
-        # Mapea a extração com o nome do .xlsx que será criado.
-        mapeamento = [
-            (r"Relatório RM \(Jira\).*\.xls", "Relatório RM (Jira).xlsx"),
-            (
-                r"Filtro Incidentes - Garantia de Projetos \(Jira\).*\.xls",
-                "Filtro Incidentes (Jira).xlsx",
-            ),
-            (r"Projetos \(Jira\).*\.xls", "Projetos (Jira).xlsx"),
-            (r"Defeitos SKY AD \(Jira\).*\.xls", "Defeitos SKY AD (Jira).xlsx"),
-        ]
-
-        with log_tempo("[ARQUIVOS] Conversão dos .xls paa .xlsx"):
-            processar_arquivos_xls(dir_base, mapeamento, del_xls=False)
-
-        with log_tempo("[RELATÓRIOS] ~ Relatório de Garantias"):
+        with log_tempo("[RELATÓRIO] ~ Relatório de Garantias"):
             # Abrir planilhas
             (
                 wb_origem_filtros,
@@ -304,7 +292,7 @@ def main():
         wb_destino_relatorio.save(
             dir_base / "Relatório Incidentes_Garantia_Projetos_v5_(2).xlsx"
         )
-        log("Relatório salvo com sucesso.")
+        log("[RELATÓRIO] Relatório salvo com sucesso.")
 
         # Fechar os workbooks
         wb_origem_filtros.close()
