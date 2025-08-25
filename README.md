@@ -52,7 +52,7 @@ AUTOMAÇÃO_V3/
 
 A pasta `src/data/` deve ser utilizada para armazenar os arquivos de extração **.xls** que serão processados pelo sistema.
 
-⚠️ **Importante:** Essa pasta está no `.gitignore`, portanto os arquivos `.xls` **não serão versionados no repositório**.
+⚠️ **Importante:** O conteúdo dessa pasta está no `.gitignore`, portanto os arquivos `.xls` ou `.xlsx` **não serão versionados no repositório**.
 
 Exemplo de uso:
 ```
