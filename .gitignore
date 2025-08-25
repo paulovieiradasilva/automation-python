@@ -5,5 +5,8 @@ __pycache__/
 # Ignorar venv
 venv/
 
-# Ignorar pasta data dentro de src
-/src/data/
+# Ignorar tudo dentro de src/data
+/src/data/*
+
+# Mas manter a própria pasta
+!src/data/.gitkeep
