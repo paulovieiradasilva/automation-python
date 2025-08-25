@@ -10,6 +10,7 @@ from utils import (
     localizar_arquivo,
 )
 
+APAGAR_XLS = True
 
 def limpar_uploads(pasta_base: Path) -> int:
     """Remove todos os .xlsx da pasta uploads com logging"""
@@ -208,7 +209,7 @@ def main():
         ]
 
         with log_tempo("[ARQUIVOS] Conversão e tratamento dos .xls"):
-            processar_arquivos_xls(data, mapeamento, del_xls=False)
+            processar_arquivos_xls(data, mapeamento, del_xls=APAGAR_XLS)
 
 
 if __name__ == "__main__":
