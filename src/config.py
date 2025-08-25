@@ -2,6 +2,7 @@
 MAPEAMENTO_COLUNAS = {
     "#": "Chave",
     "SUMÁRIO": "Resumo",
+    "SUMARIO": "Resumo",
     "DESCRIÇÃO": "Descrição",
     "STATUS": "Situação",
     "TIPO CHAMADO": "Tipo de Item",
@@ -21,6 +22,7 @@ MAPEAMENTO_COLUNAS = {
     "TEMPO DE SOLUÇÃO": "Tempo de Solução",
     "CANAL DE ACIONAMENTO": "Canal de Acionamento",
     "TEMPO DE RESPOSTA": "Tempo até a primeira resposta",
+    "Tempo até a primeira resposta": "Tempo até a primeira resposta",
     "PROJETO RELACIONADO": "Projeto relacionado",
     "ORIGINADO POR": "Canal de Acionamento",
     "TEMPO TOTAL DA ATIVIDADE": "Tempo de Solução",

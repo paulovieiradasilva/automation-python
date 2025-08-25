@@ -13,6 +13,8 @@ from utils import (
     preparar_destino,
 )
 
+NOME_RELATORIO = "Relatorio de Incidentes_Project Room_v1.xlsx"
+
 
 def abrir_planilhas():
     """Abre planilha de origem e destino, retornando workbooks e worksheets."""
@@ -28,9 +30,7 @@ def abrir_planilhas():
     ws_origem_filtros = wb_origem_filtros.active
 
     # Planilha de destino - [Relatório]
-    wb_destino_relatorio = load_workbook(
-        dir_base / "Relatório de Incidentes_Project Room_v1.xlsx"
-    )
+    wb_destino_relatorio = load_workbook(dir_base / NOME_RELATORIO)
     ws_destino_rf = wb_destino_relatorio["Resolvidos-Fechados"]
     ws_destino_ri = wb_destino_relatorio["Relatório de Incidentes"]
 
@@ -216,9 +216,7 @@ def main():
                 processar_rf(ws_origem_filtros, ws_destino_relatorio)
 
         # Salvar planilha
-        wb_destino_relatorio.save(
-            data / "Relatório de Incidentes_Project Room_v1_(2).xlsx"
-        )
+        wb_destino_relatorio.save(data / NOME_RELATORIO)
         log("[RELATÓRIO] Relatório salvo com sucesso.")
 
         # Fechar os workbooks
