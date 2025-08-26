@@ -2,7 +2,6 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from config import MAPEAMENTO_COLUNAS, COLUNAS_RELATORIO
-from processar_xls import processar_arquivos_xls
 from utils import (
     log,
     log_tempo,
@@ -13,6 +12,7 @@ from utils import (
     preparar_destino,
 )
 
+# Nome do relatorio
 NOME_RELATORIO = "Relatorio de Incidentes_Project Room_v1.xlsx"
 
 
@@ -108,6 +108,7 @@ def obter_ultima_linha(ws, coluna_chave):
     Args: ws: Worksheet (aba do Excel) coluna_chave (str): Nome do cabeçalho da coluna usada como referência.
     Returns: int: Número da última linha com dados.
     """
+    
     cabecalho = [cell.value for cell in ws[1]]
     if coluna_chave not in cabecalho:
         raise ValueError(
@@ -119,7 +120,15 @@ def obter_ultima_linha(ws, coluna_chave):
 
 
 def processar_rf(ws_origem, ws_destino):
+    """
+    Processa a aba de Incidentes (ws_origem) e copia as linhas com status
+    'Resolvido' e 'Finalizado' para a aba de Relatório de Finalizados (ws_destino).
 
+    Args:
+        ws_origem (Worksheet): Aba de Incidentes.
+        ws_destino (Worksheet): Aba de Relatório de Finalizados.
+    """
+    
     # Número da Linha Modelo.
     nun_linha = 347
 
@@ -156,7 +165,15 @@ def processar_rf(ws_origem, ws_destino):
 
 
 def processar_ri(ws_origem, ws_destino):
+    """
+    Processa a aba de Incidentes (ws_origem) e copia as linhas com status
+    diferente de 'Resolvido', 'Finalizado' e 'Cancelado' para a aba de Relatório de Incidentes (ws_destino).
 
+    Args:
+        ws_origem (Worksheet): Aba de Incidentes.
+        ws_destino (Worksheet): Aba de Relatório de Incidentes.
+    """
+    
     # Número da Linha Modelo.
     nun_linha = 2
 

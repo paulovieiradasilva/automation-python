@@ -1,9 +1,8 @@
 import re
+import time
 from pathlib import Path
 from copy import copy
 from contextlib import contextmanager
-import time
-
 from openpyxl.utils import column_index_from_string
 from openpyxl.worksheet.worksheet import Worksheet
 
@@ -15,6 +14,13 @@ def log(message):
 
 @contextmanager
 def log_tempo(mensagem="Processo finalizado"):
+    """Context manager para registrar o tempo de execução o de um bloco de
+    código. Registra a mensagem de início e fim do bloco com o tempo de
+    execução em minutos e segundos.
+
+    Args:
+        mensagem (str): Mensagem para identificar o bloco de código.
+    """
     inicio = time.time()
     log(f"{mensagem} iniciado...")
     try:
@@ -57,12 +63,14 @@ def preparar_pasta(subpasta: str | None = None) -> Path:
 
 def localizar_arquivo(pasta: Path, nome_arquivo: str) -> Path | None:
     """Encontra um arquivo que corresponde ao padrão especificado na pasta."""
+    
     log(f"[ARQUIVO] Buscando o arquivo: {nome_arquivo}")
     for arquivo in pasta.glob("*.xls"):
         if re.match(nome_arquivo, arquivo.name):
             log(f"[ARQUIVO] Encontrado o: {arquivo.name}")
             return arquivo
     log("[ARQUIVO] Nenhum arquivo encontrado.")
+    
     return None
 
 
@@ -139,6 +147,12 @@ def filtrar_linhas(
     linha_inicial: int = 2,
     linha_final: int = None,
 ) -> list[int]:
+    """
+    Filtra linhas de uma planilha com base em uma coluna (status)
+    e retorna uma lista com os índices das linhas que devem ser
+    consideradas..
+    """
+    
     if linha_final is None:
         linha_final = ws.max_row
 
@@ -201,6 +215,12 @@ def deletar_linhas(sheet, linhas, log_prefix="[TRATAMENTO]"):
 
 
 def salvar_excel(workbook, caminho: Path):
+    """
+    Salva um workbook do Excel em um arquivo.
+    
+    :param workbook: um Workbook do Excel
+    :param caminho: um Path com o caminho para o arquivo a ser salvo
+    """
     with log_tempo("[ARQUIVO] Salvar arquivo"):
         workbook.SaveAs(str(caminho), FileFormat=51)
         log(f"[ARQUIVO] Arquivo salvo como: {caminho.name}")

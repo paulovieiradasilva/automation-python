@@ -1,8 +1,7 @@
 from pathlib import Path
 from openpyxl import load_workbook
 
-from processar_xls import processar_arquivos_xls
-from config import COLUNAS_RELATORIO, MAPEAMENTO_COLUNAS
+from config import MAPEAMENTO_COLUNAS, COLUNAS_RELATORIO
 from utils import (
     log,
     log_tempo,
@@ -13,6 +12,7 @@ from utils import (
     preparar_destino,
 )
 
+# Nome do relatorio
 NOME_RELATORIO = "Relatorio Incidentes_Garantia_Projetos_v5.xlsx"
 
 
@@ -151,7 +151,15 @@ def obter_ultima_linha(ws, coluna_chave):
 
 
 def processar_rf(ws_origem, ws_destino):
+    """
+    Processa a aba de Incidentes (ws_origem) e copia as linhas com status
+    'Resolvido' e 'Finalizado' para a aba de Relatório de Finalizados (ws_destino).
 
+    Args:
+        ws_origem (Worksheet): Aba de Incidentes.
+        ws_destino (Worksheet): Aba de Relatório de Finalizados.
+    """
+    
     # Número da Linha Modelo.
     nun_linha = 145
 
@@ -188,7 +196,15 @@ def processar_rf(ws_origem, ws_destino):
 
 
 def processar_ri(ws_origem, ws_destino):
+    """
+    Processa a aba de Incidentes (ws_origem) e copia as linhas com status
+    diferente de 'Resolvido' e 'Finalizado' para a aba de Relatório de Incidentes (ws_destino).
 
+    Args:
+        ws_origem (Worksheet): Aba de Incidentes.
+        ws_destino (Worksheet): Aba de Relatório de Incidentes.
+    """
+    
     # Número da Linha Modelo.
     nun_linha = 2
 
@@ -225,7 +241,14 @@ def processar_ri(ws_origem, ws_destino):
 
 
 def processar_projetos(ws_origem, ws_destino):
+    """
+    Processa a aba de Incidentes (ws_origem) e copia todas as linhas para a aba de Projetos (ws_destino).
 
+    Args:
+        ws_origem (Worksheet): Aba de Incidentes.
+        ws_destino (Worksheet): Aba de Projetos.
+    """
+    
     # Número da Linha Modelo.
     nun_linha = 2
 
