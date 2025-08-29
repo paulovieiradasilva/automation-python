@@ -142,7 +142,7 @@ def processar_arquivos_xls(folder_data: Path, arquivos_info: list[dict], del_xls
 
                 if resultado and del_xls and arquivo.suffix.lower() == ".xls":
                     arquivo.unlink()
-                    log(f"[ARQUIVO] .xls original removido: {arquivo}")
+                    log(f"[ARQUIVO] .xls original removido: {arquivo.name}")
     finally:
         excel.Quit()
 
@@ -158,7 +158,6 @@ def main():
 
         mapeamento = [
             (r"Relatório RM \(Jira\).*\.xls", "Relatório RM (Jira).xlsx"),
-            (r"Project Room \(Jira\).*\.xls", "Project Room (Jira).xlsx"),
             (
                 r"Filtro Incidentes - Garantia de Projetos \(Jira\).*\.xls",
                 "Filtro Incidentes (Jira).xlsx",

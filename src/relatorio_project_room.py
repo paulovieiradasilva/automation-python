@@ -1,6 +1,7 @@
 from pathlib import Path
 from openpyxl import load_workbook
 
+from processar_xls import processar_arquivos_xls
 from config import MAPEAMENTO_COLUNAS, COLUNAS_RELATORIO
 from utils import (
     log,
@@ -108,7 +109,7 @@ def obter_ultima_linha(ws, coluna_chave):
     Args: ws: Worksheet (aba do Excel) coluna_chave (str): Nome do cabeçalho da coluna usada como referência.
     Returns: int: Número da última linha com dados.
     """
-    
+
     cabecalho = [cell.value for cell in ws[1]]
     if coluna_chave not in cabecalho:
         raise ValueError(
@@ -128,7 +129,7 @@ def processar_rf(ws_origem, ws_destino):
         ws_origem (Worksheet): Aba de Incidentes.
         ws_destino (Worksheet): Aba de Relatório de Finalizados.
     """
-    
+
     # Número da Linha Modelo.
     nun_linha = 347
 
@@ -173,7 +174,7 @@ def processar_ri(ws_origem, ws_destino):
         ws_origem (Worksheet): Aba de Incidentes.
         ws_destino (Worksheet): Aba de Relatório de Incidentes.
     """
-    
+
     # Número da Linha Modelo.
     nun_linha = 2
 
@@ -213,6 +214,13 @@ def main():
     with log_tempo("[PROCESSAMENTO] Project Room"):
         # Diretório onde os arquivos estao
         data = preparar_pasta()
+
+        mapeamento = [
+            (r"Project Room \(Jira\).*\.xls", "Project Room (Jira).xlsx"),
+        ]
+
+        with log_tempo("[ARQUIVOS] Conversão e tratamento dos .xls"):
+            processar_arquivos_xls(data, mapeamento, True)
 
         with log_tempo("[RELATÓRIO] ~ Relatório de Project Room"):
             # Abrir planilhas
