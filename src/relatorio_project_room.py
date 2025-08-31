@@ -10,6 +10,7 @@ from utils import (
     filtrar_linhas,
     obter_ultima_linha_com_dados,
     preparar_pasta,
+    limpar_uploads,
     preparar_destino,
 )
 
@@ -214,6 +215,10 @@ def main():
     with log_tempo("[PROCESSAMENTO] Project Room"):
         # Diretório onde os arquivos estao
         data = preparar_pasta()
+
+        # Limpeza inicial
+        with log_tempo("[DIRETORIO] Limpar pasta uploads"):
+            limpar_uploads(data)
 
         mapeamento = [
             (r"Project Room \(Jira\).*\.xls", "Project Room (Jira).xlsx"),

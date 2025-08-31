@@ -1,16 +1,11 @@
 from pathlib import Path
+
 import win32com.client as win32
 
-from utils import (
-    log,
-    log_tempo,
-    salvar_excel,
-    deletar_linhas,
-    preparar_pasta,
-    localizar_arquivo,
-)
+from utils import deletar_linhas, localizar_arquivo, log, log_tempo, salvar_excel
 
 APAGAR_XLS = True
+
 
 def limpar_uploads(pasta_base: Path) -> int:
     """Remove todos os arquivos .xlsx da pasta uploads.
@@ -39,13 +34,13 @@ def limpar_uploads(pasta_base: Path) -> int:
 def processar_arquivo_xlsx(caminho_origem: Path, caminho_destino: Path, excel):
     """
     Processa um arquivo .xls e salva em um novo arquivo .xlsx.
-    
+
     :param caminho_origem: caminho do arquivo .xls
     :param caminho_destino: caminho do arquivo .xlsx a ser salvo
     :param excel: objeto Excel.Application
     :return: o caminho do arquivo .xlsx salvo, ou None em caso de erro
     """
-    
+
     xlManual = -4135
     xlAutomatic = -4105
 
@@ -112,7 +107,6 @@ def processar_arquivo_xlsx(caminho_origem: Path, caminho_destino: Path, excel):
 
 
 def processar_arquivos_xls(folder_data: Path, arquivos_info: list[dict], del_xls: bool):
-
     """
     Processa arquivos .xls em uma pasta para .xlsx na pasta uploads.
 
@@ -148,26 +142,7 @@ def processar_arquivos_xls(folder_data: Path, arquivos_info: list[dict], del_xls
 
 
 def main():
-    with log_tempo("[PROCESSAMENTO] .xls para .xlsx"):
-        # Diretório onde os arquivos estao
-        data = preparar_pasta()
-
-        # Limpeza inicial
-        with log_tempo("[DIRETORIO] Limpar pasta uploads"):
-            limpar_uploads(data)
-
-        mapeamento = [
-            (r"Relatório RM \(Jira\).*\.xls", "Relatório RM (Jira).xlsx"),
-            (
-                r"Filtro Incidentes - Garantia de Projetos \(Jira\).*\.xls",
-                "Filtro Incidentes (Jira).xlsx",
-            ),
-            (r"Projetos \(Jira\).*\.xls", "Projetos (Jira).xlsx"),
-            (r"Defeitos SKY AD \(Jira\).*\.xls", "Defeitos SKY AD (Jira).xlsx"),
-        ]
-
-        with log_tempo("[ARQUIVOS] Conversão e tratamento dos .xls"):
-            processar_arquivos_xls(data, mapeamento, del_xls=APAGAR_XLS)
+    pass
 
 
 if __name__ == "__main__":

@@ -63,14 +63,14 @@ def preparar_pasta(subpasta: str | None = None) -> Path:
 
 def localizar_arquivo(pasta: Path, nome_arquivo: str) -> Path | None:
     """Encontra um arquivo que corresponde ao padrão especificado na pasta."""
-    
+
     log(f"[ARQUIVO] Buscando o arquivo: {nome_arquivo}")
     for arquivo in pasta.glob("*.xls"):
         if re.match(nome_arquivo, arquivo.name):
             log(f"[ARQUIVO] Encontrado o: {arquivo.name}")
             return arquivo
     log("[ARQUIVO] Nenhum arquivo encontrado.")
-    
+
     return None
 
 
@@ -152,7 +152,7 @@ def filtrar_linhas(
     e retorna uma lista com os índices das linhas que devem ser
     consideradas..
     """
-    
+
     if linha_final is None:
         linha_final = ws.max_row
 
@@ -217,10 +217,34 @@ def deletar_linhas(sheet, linhas, log_prefix="[TRATAMENTO]"):
 def salvar_excel(workbook, caminho: Path):
     """
     Salva um workbook do Excel em um arquivo.
-    
+
     :param workbook: um Workbook do Excel
     :param caminho: um Path com o caminho para o arquivo a ser salvo
     """
     with log_tempo("[ARQUIVO] Salvar arquivo"):
         workbook.SaveAs(str(caminho), FileFormat=51)
         log(f"[ARQUIVO] Arquivo salvo como: {caminho.name}")
+
+
+def limpar_uploads(pasta_base: Path) -> int:
+    """Remove todos os arquivos .xlsx da pasta uploads.
+
+    :param pasta_base: pasta base do projeto
+    :return: quantidade de arquivos removidos
+    """
+    pasta = pasta_base / "uploads"
+    if not pasta.exists():
+        log("[DIRETORIO] Pasta uploads não encontrada")
+        return 0
+
+    removidos = 0
+    for arq in pasta.glob("*.xlsx"):
+        try:
+            arq.unlink()
+            log(f"[DIRETORIO] Removido: {arq.name}")
+            removidos += 1
+        except Exception as e:
+            log(f"[DIRETORIO] Erro ao remover {arq.name}: {str(e)}")
+
+    log(f"[DIRETORIO] Total removido: {removidos}")
+    return removidos

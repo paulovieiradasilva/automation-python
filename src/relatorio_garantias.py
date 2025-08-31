@@ -1,15 +1,18 @@
 from pathlib import Path
+
 from openpyxl import load_workbook
 
-from config import MAPEAMENTO_COLUNAS, COLUNAS_RELATORIO
+from config import COLUNAS_RELATORIO, MAPEAMENTO_COLUNAS
+from processar_xls import processar_arquivos_xls
 from utils import (
+    copiar_linha_com_formula,
+    filtrar_linhas,
+    limpar_uploads,
     log,
     log_tempo,
-    filtrar_linhas,
-    copiar_linha_com_formula,
     obter_ultima_linha_com_dados,
-    preparar_pasta,
     preparar_destino,
+    preparar_pasta,
 )
 
 # Nome do relatorio
@@ -159,7 +162,7 @@ def processar_rf(ws_origem, ws_destino):
         ws_origem (Worksheet): Aba de Incidentes.
         ws_destino (Worksheet): Aba de Relatório de Finalizados.
     """
-    
+
     # Número da Linha Modelo.
     nun_linha = 145
 
@@ -204,7 +207,7 @@ def processar_ri(ws_origem, ws_destino):
         ws_origem (Worksheet): Aba de Incidentes.
         ws_destino (Worksheet): Aba de Relatório de Incidentes.
     """
-    
+
     # Número da Linha Modelo.
     nun_linha = 2
 
@@ -248,7 +251,7 @@ def processar_projetos(ws_origem, ws_destino):
         ws_origem (Worksheet): Aba de Incidentes.
         ws_destino (Worksheet): Aba de Projetos.
     """
-    
+
     # Número da Linha Modelo.
     nun_linha = 2
 
@@ -284,7 +287,24 @@ def processar_projetos(ws_origem, ws_destino):
 def main():
     with log_tempo("[PROCESSAMENTO] Garantias"):
         # Diretório onde os arquivos estao
-        dir_base = preparar_pasta()
+        data = preparar_pasta()
+
+        # Limpeza inicial
+        with log_tempo("[DIRETORIO] Limpar pasta uploads"):
+            limpar_uploads(data)
+
+        mapeamento = [
+            (r"Relatório RM \(Jira\).*\.xls", "Relatório RM (Jira).xlsx"),
+            (
+                r"Filtro Incidentes - Garantia de Projetos \(Jira\).*\.xls",
+                "Filtro Incidentes (Jira).xlsx",
+            ),
+            (r"Projetos \(Jira\).*\.xls", "Projetos (Jira).xlsx"),
+            (r"Defeitos SKY AD \(Jira\).*\.xls", "Defeitos SKY AD (Jira).xlsx"),
+        ]
+
+        with log_tempo("[ARQUIVOS] Conversão e tratamento dos .xls"):
+            processar_arquivos_xls(data, mapeamento, True)
 
         with log_tempo("[RELATÓRIO] ~ Relatório de Garantias"):
             # Abrir planilhas
