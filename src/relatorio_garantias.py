@@ -7,7 +7,6 @@ from processar_xls import processar_arquivos_xls
 from utils import (
     copiar_linha_com_formula,
     filtrar_linhas,
-    limpar_uploads,
     log,
     log_tempo,
     obter_ultima_linha_com_dados,
@@ -288,10 +287,6 @@ def main():
     with log_tempo("[PROCESSAMENTO] Garantias"):
         # Diretório onde os arquivos estao
         data = preparar_pasta()
-
-        # Limpeza inicial
-        with log_tempo("[DIRETORIO] Limpar pasta uploads"):
-            limpar_uploads(data)
 
         mapeamento = [
             (r"Relatório RM \(Jira\).*\.xls", "Relatório RM (Jira).xlsx"),
