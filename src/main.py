@@ -1,6 +1,5 @@
 import datetime
 
-import processar_xls
 import relatorio_garantias
 import relatorio_project_room
 from utils import log_tempo
