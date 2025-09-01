@@ -332,7 +332,7 @@ def main():
                 processar_rf(ws_origem_filtros, ws_destino_relatorio)
 
         # Salvar planilha
-        wb_destino_relatorio.save(dir_base / NOME_RELATORIO)
+        wb_destino_relatorio.save(data / NOME_RELATORIO)
         log("[RELATÓRIO] Relatório salvo com sucesso.")
 
         # Fechar os workbooks
